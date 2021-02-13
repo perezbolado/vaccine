@@ -22,8 +22,7 @@ COPY --from=build_lxml /usr/lib/libgpg-error.so.0 /usr/lib/libgpg-error.so.0
 
 RUN python -OO -m pip install --no-cache --no-index --find-links=/root/lxml_wheel/ lxml
 WORKDIR /usr/src/app
-RUN git clone https://github.com/perezbolado/vaccine.git
-
+RUN git clone https://github.com/perezbolado/vaccine.git /usr/src/app
 #RUN apk add --update --no-cache g++ gcc libxslt-dev
-RUN pip install -r vaccine/requirements.txt
-CMD ["python", "vaccine/alerter.py"]
+RUN pip install -r requirements.txt
+CMD ["python", "alerter.py"]

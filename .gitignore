@@ -1,2 +1,4 @@
 settings.ini
 __pycache__
+.vscode
+docker-compose.yml

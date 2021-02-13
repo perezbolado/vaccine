@@ -2,11 +2,7 @@
 from lxml import html
 import requests
 
-class site:
-    def getstatus()->bool:
-        pass
-
-class HudsonCounty(site):
+class HudsonCounty():
     def __init__(self, username:str, password:str):
         self.username = username
         self.password = password

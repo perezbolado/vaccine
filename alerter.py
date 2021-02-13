@@ -1,37 +1,37 @@
 
+from email import message
+import sys,os
 from email.mime.multipart import MIMEMultipart
-import datetime
-from os import times
-import sys
-import smtplib, ssl
-import configparser
-import time
+from email.mime.text import MIMEText
+import smtplib
+import datetime,time
 import hudson
 
 class Alerter:
-    def __init__( self, filename:str ):
-        self.config = configparser.ConfigParser()
-        self.config.read(filename)
-        self.smtp_port = self.config['mail']['port']
-        self.smtp_password = self.config['mail']['password']
-        self.smtp_sender = self.config['mail']['sender']
-        self.smtp_server = self.config['mail']['smtp_server']
-        self.email_recepients = self.config['mail']['recipients']
+    def __init__( self ):
+        # Get environment variables
+        self.smtp_port          = os.getenv('SMTP_PORT')
+        self.smtp_password      = os.getenv('SMTP_PASSWORD')
+        self.smtp_sender        = os.getenv('SMTP_EMAIL')
+        self.smtp_server        = os.getenv('SMTP_SERVER')
+        self.email_recipients   = os.getenv('EMAIL_RECIPIENTS')
+        self.frequency          = os.getenv('ALERT_FREQUENCY')
         self.sites = { 
-                'hudsoncovidvax.org' : hudson.HudsonCounty(self.config['hudsoncovidvax.org']['username'], self.config['hudsoncovidvax.org']['password'])
+                'hudsoncovidvax.org' : hudson.HudsonCounty(os.getenv('HUDSON_USER'), os.environ.get('HUDSON_PASS'))
         }
-        self.frequency = self.config['alerter']['frequency']
-
-    def send_email(self, message:str):
+        print('Start Alerter. Will check every: {} minutes'.format(self.frequency))
+                
+    def send_email(self, subject:str, message:str='' ):
         server = smtplib.SMTP(self.smtp_server,587)
         server.starttls()
         server.login(self.smtp_sender,self.smtp_password)
-        for email in self.email_recepients.split(','):
+        for email in self.email_recipients.split(','):
             msg = MIMEMultipart()
             msg['From'] = self.smtp_sender
             msg['To'] = email
-            msg['Subject'] = message
-            server.sendmail(self.smtp_sender,email,message)
+            msg['Subject'] = subject
+            msg.attach(MIMEText(message, "plain"))
+            server.sendmail(self.smtp_sender,email,msg.as_string())
         server.quit()
 
     def server_loop(self):
@@ -44,7 +44,9 @@ class Alerter:
                 try:
                     if(vaccine_site.getstatus()):
                         print ("Vaccines available!!! Sending Email")
-                        self.send_email('Vaccine Available:{} @ {}'.format(name, timestamp))
+                        subject = 'Vaccine Available:{} @ {}'.format(name, timestamp)
+                        message = 'Hurry Vacines are available @ {}'.format(name)
+                        self.send_email(subject, message)
                     else:
                         print ("No vaccines available yet")
                 except:
@@ -54,6 +56,5 @@ class Alerter:
             time.sleep(int(self.frequency)*60)
 
 if __name__ == "__main__":
-    # execute only if run as a script
-    a = Alerter('settings.ini')
+    a = Alerter()
     a.server_loop()
